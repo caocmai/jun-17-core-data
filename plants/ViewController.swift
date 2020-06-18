@@ -28,8 +28,12 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.title = "Water log"
+        self.configureTable()
         
-        table.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+    }
+    
+    func configureTable() {
+        self.table.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
         
         //we will look for Cactus for this example. We'll go over how to query in future lessons.
         
