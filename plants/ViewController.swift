@@ -10,8 +10,8 @@ import UIKit
 import CoreData
 
 class ViewController: UIViewController {
-
-    @IBOutlet weak var tableView: UITableView!
+    
+    @IBOutlet weak var table: UITableView!
     
     var managedContext: NSManagedObjectContext!
     var mainPlant : Plant?
@@ -29,52 +29,52 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         self.title = "Water log"
         
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+        table.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
         
         //we will look for Cactus for this example. We'll go over how to query in future lessons.
-
+        
         let plantSpecies = "Cactus"
         let plantSearch: NSFetchRequest<Plant> = Plant.fetchRequest()
         plantSearch.predicate = NSPredicate(format: "%K == %@", #keyPath(Plant.species), plantSpecies)
-
+        
         do {
-          let results = try managedContext.fetch(plantSearch)
-          if results.count > 0 {
-            // cactus found
-            mainPlant = results.first
-          } else {
-            // not found, create cactus
-            mainPlant = Plant(context: managedContext)
-            mainPlant?.species = plantSpecies
-            try managedContext.save()
-          }
+            let results = try managedContext.fetch(plantSearch)
+            if results.count > 0 {
+                // cactus found
+                mainPlant = results.first
+            } else {
+                // not found, create cactus
+                mainPlant = Plant(context: managedContext)
+                mainPlant?.species = plantSpecies
+                try managedContext.save()
+            }
         } catch let error as NSError {
-          print("Error: \(error) description: \(error.userInfo)")
+            print("Error: \(error) description: \(error.userInfo)")
         }
-
+        
     }
-
+    
     @IBAction func addLog(_ sender: Any) {
-//       dates.append(Date())
-        tableView.reloadData()
+        //       dates.append(Date())
         
         //new water date entity
         let waterDate = WaterDate(context: managedContext)
         waterDate.date = NSDate() as Date
-
+        
         //add it to the Plant's dates set
-
-          if let plant = mainPlant, let dates = plant.waterDates?.mutableCopy() as? NSMutableOrderedSet {
+        
+        if let plant = mainPlant, let dates = plant.waterDates?.mutableCopy() as? NSMutableOrderedSet {
             dates.add(waterDate)
             plant.waterDates = dates
-          }
-
+        }
+        
         //save the managed object context
-          do {
+        do {
             try self.managedContext.save()
-          } catch let error as NSError {
+            self.table.reloadData()
+        } catch let error as NSError {
             print("Error: \(error), description: \(error.userInfo)")
-          }
+        }
     }
     
 }
@@ -88,10 +88,10 @@ extension ViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let waterDates =  mainPlant!.waterDates
-        let dateObject = waterDates![indexPath.row] as! WaterDate
+        let waterDatesNSSet =  mainPlant!.waterDates
+        let waterDateObject = waterDatesNSSet![indexPath.row] as! WaterDate
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
-        cell.textLabel?.text = dateFormatter.string(from: dateObject.date!)
+        cell.textLabel?.text = dateFormatter.string(from: waterDateObject.date!)
         
         return cell
     }
@@ -101,17 +101,14 @@ extension ViewController: UITableViewDataSource {
         if editingStyle == .delete {
             let date = mainPlant!.waterDates![indexPath.row] as! WaterDate
             do {
-                self.mainPlant!.waterDates!.remove(indexPath.row)
+                self.mainPlant!.waterDates!.removeObject(at: indexPath.row)
                 self.managedContext.delete(date)
-                // This crashes the app
-//                self.tableView.deleteRows(at: [indexPath], with: .fade)
+                self.table.deleteRows(at: [indexPath], with: .fade)
                 try self.managedContext.save()
-                
             } catch {
                 print(error)
             }
         }
-        self.tableView.reloadData()
     }
 }
 
